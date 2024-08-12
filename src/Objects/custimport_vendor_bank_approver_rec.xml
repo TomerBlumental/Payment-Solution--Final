@@ -1,0 +1,61 @@
+<savedcsvimport scriptid="custimport_vendor_bank_approver_rec">
+  <charencoding>windows-1252</charencoding>
+  <columndelimiter>COMMA</columndelimiter>
+  <customrecord>[scriptid=customrecord_vendor_bank_approver]</customrecord>
+  <datahandling>ADD</datahandling>
+  <decimaldelimiter>PERIOD</decimaldelimiter>
+  <ignorereadonly>T</ignorereadonly>
+  <importname>Vendor Bank Approver Rec</importname>
+  <logsystemnotescustfields>F</logsystemnotescustfields>
+  <multiselectdelimiter>|</multiselectdelimiter>
+  <overwritemissingfields>F</overwritemissingfields>
+  <overwritesublists>F</overwritesublists>
+  <recordtype>CUSTOMRECORD</recordtype>
+  <runserversuitescript>T</runserversuitescript>
+  <usemultithread>T</usemultithread>
+  <validatemandatorycustfields>T</validatemandatorycustfields>
+  <audience>
+    <allemployees>F</allemployees>
+    <allpartners>F</allpartners>
+    <allroles>F</allroles>
+    <globaledit>F</globaledit>
+    <ispublic>F</ispublic>
+    <roles></roles>
+  </audience>
+  <filemappings>
+    <filemapping>
+      <file>CUSTOMRECORD</file>
+    </filemapping>
+  </filemappings>
+  <recordmappings>
+    <recordmapping>
+      <record>CUSTOMRECORD</record>
+      <fieldmappings>
+        <fieldmapping>
+          <field>[scriptid=customrecord_vendor_bank_approver.custrecord_vba_first_approver]</field>
+          <columnreference>
+            <column>Approver Fist Level SB</column>
+            <file>CUSTOMRECORD</file>
+            <type>NAME</type>
+          </columnreference>
+        </fieldmapping>
+        <fieldmapping>
+          <field>[scriptid=customrecord_vendor_bank_approver.custrecord_vba_second_approver]</field>
+          <columnreference>
+            <column>Approver Second Level SB</column>
+            <file>CUSTOMRECORD</file>
+            <type>INTERNAL_ID</type>
+          </columnreference>
+        </fieldmapping>
+        <fieldmapping>
+          <field>[scriptid=customrecord_vendor_bank_approver.custrecord_vba_subsidiary]</field>
+          <columnreference>
+            <column>Sub ID</column>
+            <file>CUSTOMRECORD</file>
+            <type>INTERNAL_ID</type>
+          </columnreference>
+        </fieldmapping>
+      </fieldmappings>
+    </recordmapping>
+  </recordmappings>
+</savedcsvimport>

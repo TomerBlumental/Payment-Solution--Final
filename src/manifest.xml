@@ -1,0 +1,144 @@
+<manifest projecttype="ACCOUNTCUSTOMIZATION">
+  <projectname>BOB-2467 - Vendor Approval Flow</projectname>
+  <frameworkversion>1.0</frameworkversion>
+  <dependencies>
+    <features>
+      <feature required="true">WORKFLOW</feature>
+      <feature required="false">MULTILANGUAGE</feature>
+      <feature required="false">WEBSITE</feature>
+      <feature required="true">SERVERSIDESCRIPTING</feature>
+      <feature required="false">CRM</feature>
+      <feature required="false">JOBS</feature>
+      <feature required="false">EXTREMELIST</feature>
+      <feature required="false">MAILMERGE</feature>
+      <feature required="true">CUSTOMRECORDS</feature>
+      <feature required="true">SUBSIDIARIES</feature>
+      <feature required="false">CREATESUITEBUNDLES</feature>
+      <feature required="true">ACCOUNTING</feature>
+      <feature required="true">MULTICURRENCY</feature>
+      <feature required="true">MULTICURRENCYVENDOR</feature>
+      <feature required="true">PAYABLES</feature>
+      <feature required="true">PURCHASEORDERS</feature>
+      <feature required="true">RECEIVABLES</feature>
+      <feature required="false">EXPREPORTS</feature>
+      <feature required="false">ADVRECEIVING</feature>
+      <feature required="false">SUBSCRIPTIONBILLING</feature>
+      <feature required="false">CUSTOMTRANSACTIONS</feature>
+      <feature required="false">WEBSTORE</feature>
+    </features>
+    <objects>
+      <object>custentity_il_taxpayer_id</object>
+      <object>customrecord_il_bank.custrecord_il_bank_address</object>
+      <object>custentity_hb_ven_bank_detail_url</object>
+      <object>custentity_jpmc_ven_pm</object>
+      <object>customrecord_il_wht_certificates.custrecord_il_tax_certificates_key</object>
+      <object>custentity_il_wht_tax_officer_num</object>
+      <object>custentity_il_gb_swift_code</object>
+      <object>custentity_il_wht_pay_group</object>
+      <object>customrecord_stripe_addon_api_log.custrecord_stripe_addon_sal_rel_entity</object>
+      <object>custtab_29_3956802_208</object>
+      <object>custtab_540_4672400_sb3_887</object>
+      <object>custentity_il_additnl_emails</object>
+      <object>custentity_il_cb_pre_advice_details</object>
+      <object>custentity_il_bp_bank_name</object>
+      <object>custentity_sii_id_type</object>
+      <object>custtab_301_t1234693_274</object>
+      <object>custentity_il_bl_wht_appro_exp_date</object>
+      <object>custform_87_4672400_590</object>
+      <object>custentity_il_cb_tax_codes</object>
+      <object>custentity_il_taxitem</object>
+      <object>custentity_il_bl_charge_method</object>
+      <object>custtab_304_t1234693_274</object>
+      <object>custentity_sii_id</object>
+      <object>customrecord_il_vendor_pay_method_list.value_5_t1234693_584</object>
+      <object>custentity_il_cb_benefi_routing_method</object>
+      <object>custentity_il_wht_rep_group</object>
+      <object>custentity_il_bp_bank_city</object>
+      <object>customrecord_fispan_vendor_bank_details.custrecord_fispan_vbd_vendor</object>
+      <object>custentity_il_wht_orgtype</object>
+      <object>custentity_il_self_vat</object>
+      <object>custentity_il_pdf_lang</object>
+      <object>custentity_il_bp_bank_branch</object>
+      <object>custentity_il_bank_branch_number</object>
+      <object>custtab_jpmc_vendors</object>
+      <object>custentity_il_gb_iban</object>
+      <object>custtab_emea_entity_setup</object>
+      <object>customrecord_il_bank.custrecord_il_bank_code</object>
+      <object>custtab_str_entity_tab</object>
+      <object>custentity_4599_sg_uen</object>
+      <object>custentity_il_cb_bank_routing_code</object>
+      <object>custentity_il_cb_charge_indicator</object>
+      <object>custtab_133_t926716_424</object>
+      <object>custentity_il_bp_bank_swiftcode</object>
+      <object>custentity_il_bl_ven_num</object>
+      <object>custentity_il_cb_beneficiary_bank</object>
+      <object>custentity_il_bank_code</object>
+      <object>custentity_il_gb_bank_address</object>
+      <object>custtab_mhi_stripe_entity</object>
+      <object>customrecord_il_vendor_pay_method_list</object>
+      <object>custentity_str_gl_de_gobd_taxno</object>
+      <object>custentity_il_cash_burn</object>
+      <object>custentity_il_gb_bank_acc_num</object>
+      <object>custentity_il_bank_iban_code</object>
+      <object>custentity_jpmc_ven_group</object>
+      <object>custentity_il_bank_account_number</object>
+      <object>custentity_is_ai_attachment_push</object>
+      <object>customrecord_fispan_vendor_bank_details</object>
+      <object>custentity_il_bl_service_type</object>
+      <object>customrecord_il_bank</object>
+      <object>custbody_travel_perk_intgreation_sync</object>
+      <object>custentity_il_bp_bank_country</object>
+      <object>custentity_my_brn</object>
+      <object>custentity_alf_company_reg_num</object>
+      <object>custentity_il_mobile</object>
+      <object>custentity_il_gb_aba_num</object>
+      <object>custentity_il_bp_bank_account</object>
+      <object>custentity_il_wht_reporting_flag</object>
+      <object>custtab_35_3956802_208</object>
+      <object>custtab_34_3956802_208</object>
+      <object>custtab_302_t1234693_274</object>
+      <object>customsearch_bob_1780_tp_inteco</object>
+      <object>custentity_il_bl_wht_exempt_approval_num</object>
+      <object>custentity_il_cb_branch_number</object>
+      <object>custentity_is_ai_created</object>
+      <object>custentity_trl_vendor</object>
+      <object>custentity_il_vendor_pay_method</object>
+      <object>custentity_ava_usetaxassessment</object>
+      <object>custentity_il_bp_bank_addr</object>
+      <object>custentity_il_bank_name</object>
+      <object>custentity_il_bp_bank_code</object>
+      <object>customrecord_est_spl.custrecord_est_spl_vendor</object>
+      <object>custentity_tax_reg_no</object>
+      <object>custtab_33_3956802_208</object>
+      <object>custtab_379_t1234693_403</object>
+      <object>custentity_hb_legacy_system_number</object>
+      <object>custtab_17_3776644_208</object>
+      <object>custentity_default_tax_item</object>
+      <object>custentity_il_wht_occupation_des</object>
+      <object>custentity_ai_assets</object>
+      <object>customrecord_il_bank.custrecord_il_bank_branch_name</object>
+      <object>custentityvendorbudgetcategory</object>
+      <object>custentity_jpmc_ven_payment_emails</object>
+      <object>custentity_ai_last_updated_at</object>
+      <object>customrole_hbn_global_controller_admin</object>
+      <object>customrole_hb_global_controller</object>
+      <object>custtab_cash_application</object>
+      <object>custentity_il_bank_address</object>
+      <object>custentity_emea_company_reg_num</object>
+      <object>custtab_410_4672400_sb1_552</object>
+      <object>custtab_stripe_addon_stripe_entity_tab</object>
+      <object>custentity_il_gb_bank_name</object>
+      <object>custtab_alf_entity_setup</object>
+      <object>custentity_il_validity_bookkeeping</object>
+      <object>custentity_il_cb_account_num</object>
+      <object>custentity_il_bank_branch_name</object>
+      <object>custentity_il_gb_bank_acc_name</object>
+      <object>custentity_il_bank_swift_code</object>
+      <object>custentity_hb_ven_bank_det_doc</object>
+      <object>customrecord_il_bank.custrecord_il_bank_name</object>
+      <object>custbody_bob_1780_tp_inreco_solved</object>
+      <object>custentity_performa_invoice</object>
+      <object>custtab_370_t1234693_780</object>
+    </objects>
+  </dependencies>
+</manifest>

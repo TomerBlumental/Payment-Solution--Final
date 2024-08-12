@@ -1,0 +1,28 @@
+<customlist scriptid="customlist_vendor_bank_approval_status">
+  <description></description>
+  <isinactive>F</isinactive>
+  <isordered>T</isordered>
+  <name>Vendor Bank Approval Status</name>
+  <customvalues>
+    <customvalue scriptid="val_vbas_pending_approval">
+      <isinactive>F</isinactive>
+      <value>Pending Approval</value>
+    </customvalue>
+    <customvalue scriptid="val_vbas_first_approval">
+      <isinactive>F</isinactive>
+      <value>First Approval</value>
+    </customvalue>
+    <customvalue scriptid="val_vbas_second_approval">
+      <isinactive>F</isinactive>
+      <value>Second Approval</value>
+    </customvalue>
+    <customvalue scriptid="val_vbas_approved">
+      <isinactive>F</isinactive>
+      <value>Approved</value>
+    </customvalue>
+    <customvalue scriptid="val_vbas_rejected">
+      <isinactive>F</isinactive>
+      <value>Rejected</value>
+    </customvalue>
+  </customvalues>
+</customlist>

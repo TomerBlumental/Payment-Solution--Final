@@ -1,0 +1,24 @@
+<customlist scriptid="customlist_vendor_payment_processor">
+  <description></description>
+  <isinactive>F</isinactive>
+  <isordered>T</isordered>
+  <name>Vendor Payment Processor  </name>
+  <customvalues>
+    <customvalue scriptid="val_vpp_masav">
+      <isinactive>F</isinactive>
+      <value>EFT</value>
+    </customvalue>
+    <customvalue scriptid="val_vpp_fispan">
+      <isinactive>F</isinactive>
+      <value>Fispan</value>
+    </customvalue>
+    <customvalue scriptid="val_vpp_non_support">
+      <isinactive>F</isinactive>
+      <value>Non Supported</value>
+    </customvalue>
+    <customvalue scriptid="val_vpp_cc">
+      <isinactive>F</isinactive>
+      <value>Credit Card</value>
+    </customvalue>
+  </customvalues>
+</customlist>

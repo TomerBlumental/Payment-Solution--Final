@@ -1,0 +1,42 @@
+<workflow scriptid="customworkflow_entity_bank_detail_lock">
+  <description></description>
+  <initcontexts></initcontexts>
+  <initeventtypes></initeventtypes>
+  <initlocalizationcontext></initlocalizationcontext>
+  <initoncreate>T</initoncreate>
+  <initonvieworupdate>T</initonvieworupdate>
+  <initsavedsearchcondition></initsavedsearchcondition>
+  <inittriggertype></inittriggertype>
+  <isinactive>F</isinactive>
+  <islogenabled>F</islogenabled>
+  <keephistory>ALWAYS</keephistory>
+  <name>Entity Bank Details Lock</name>
+  <recordtypes>[scriptid=customrecord_fispan_vendor_bank_details]</recordtypes>
+  <releasestatus>RELEASED</releasestatus>
+  <runasadmin>T</runasadmin>
+  <initcondition>
+    <formula></formula>
+    <type>VISUAL_BUILDER</type>
+  </initcondition>
+  <workflowstates>
+    <workflowstate scriptid="workflowstate_fi_entity">
+      <description></description>
+      <donotexitworkflow>F</donotexitworkflow>
+      <name>Init</name>
+      <positionx>653</positionx>
+      <positiony>133</positiony>
+      <workflowactions triggertype="BEFORELOAD">
+        <lockrecordaction scriptid="workflowaction_fi_entity">
+          <conditionsavedsearch></conditionsavedsearch>
+          <contexttypes>CSVIMPORT|USERINTERFACE</contexttypes>
+          <eventtypes></eventtypes>
+          <isinactive>F</isinactive>
+          <initcondition>
+            <formula></formula>
+            <type>VISUAL_BUILDER</type>
+          </initcondition>
+        </lockrecordaction>
+      </workflowactions>
+    </workflowstate>
+  </workflowstates>
+</workflow>

@@ -1,0 +1,5 @@
+<subtab scriptid="custtab_vendor_bank_detail">
+  <parent></parent>
+  <tabtype>ENTITY</tabtype>
+  <title>Bank Detail</title>
+</subtab>
