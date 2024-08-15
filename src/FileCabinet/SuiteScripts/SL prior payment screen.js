@@ -62,7 +62,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/redirect'],
 
                 redirect.toSuitelet({
                     scriptId: 'customscript_payment_screen', 
-                    deploymentId: null, 
+                    deploymentId: 'customscript_payment_screen', 
                     parameters: {
                         subsidiary: subsidiary,
                         currency: currency
