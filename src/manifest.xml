@@ -1,5 +1,5 @@
 <manifest projecttype="ACCOUNTCUSTOMIZATION">
-  <projectname>BOB-2467 - Vendor Approval Flow</projectname>
+  <projectname>payment solution</projectname>
   <frameworkversion>1.0</frameworkversion>
   <dependencies>
     <features>
