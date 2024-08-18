@@ -2,8 +2,8 @@
  * @NApiVersion 2.x
  * @NScriptType Suitelet
  */
-define(['N/ui/serverWidget', 'N/search', 'N/log'], 
-    function(serverWidget, search, log) {
+define(['N/ui/serverWidget', 'N/search', 'N/redirect'], 
+    function(serverWidget, search, redirect) {
 
         function onRequest(context) {
             if (context.request.method === 'GET') {
@@ -14,52 +14,53 @@ define(['N/ui/serverWidget', 'N/search', 'N/log'],
                     title: 'Payment Screen'
                 });
 
+                // Attach Client Script using the module path
+                form.clientScriptModulePath = './cs_summary_screen.js'; 
+
                 var sublist = form.addSublist({
                     id: 'custpage_payment_sublist',
                     type: serverWidget.SublistType.INLINEEDITOR,
                     label: 'Payment Selection'
                 });
 
+                // Checkbox field
                 sublist.addField({
                     id: 'custpage_select',
                     type: serverWidget.FieldType.CHECKBOX,
                     label: 'Select'
                 });
 
+                // Other fields...
                 sublist.addField({
                     id: 'custpage_date',
                     type: serverWidget.FieldType.DATE,
                     label: 'Date'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
                 });
 
                 sublist.addField({
                     id: 'custpage_name',
                     type: serverWidget.FieldType.TEXT,
                     label: 'Name'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
                 });
 
                 sublist.addField({
                     id: 'custpage_document_number',
                     type: serverWidget.FieldType.TEXT,
                     label: 'Document Number'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
                 });
 
                 sublist.addField({
                     id: 'custpage_currency',
                     type: serverWidget.FieldType.TEXT,
                     label: 'Currency'
-                });
-
-                sublist.addField({
-                    id: 'custpage_amount',
-                    type: serverWidget.FieldType.CURRENCY,
-                    label: 'Amount (Foreign Currency)'
-                });
-
-                sublist.addField({
-                    id: 'custpage_amount_remaining',
-                    type: serverWidget.FieldType.CURRENCY,
-                    label: 'Amount Remaining (Foreign Currency)'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
                 });
 
                 sublist.addField({
@@ -68,11 +69,27 @@ define(['N/ui/serverWidget', 'N/search', 'N/log'],
                     label: 'Payment Amount'
                 });
 
+                sublist.addField({
+                    id: 'custpage_amount',
+                    type: serverWidget.FieldType.CURRENCY,
+                    label: 'Amount (Foreign Currency)'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
+                });
+
+                sublist.addField({
+                    id: 'custpage_amount_remaining',
+                    type: serverWidget.FieldType.CURRENCY,
+                    label: 'Amount Remaining (Foreign Currency)'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
+                });
+
+                // Load and populate sublist with data...
                 var transactionSearchObj = search.load({
                     id: 'customsearch_payment_screen_result'
                 });
 
-                // Add filters for subsidiary and currency based on the previous screen's input
                 transactionSearchObj.filters.push(search.createFilter({
                     name: 'subsidiary',
                     operator: search.Operator.IS,
@@ -91,6 +108,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/log'],
                 });
 
                 for (var i = 0; i < results.length; i++) {
+                    var amount = parseFloat(results[i].getValue('fxamount'));
+                    var amountRemaining = amount;
+
                     sublist.setSublistValue({
                         id: 'custpage_date',
                         line: i,
@@ -114,42 +134,33 @@ define(['N/ui/serverWidget', 'N/search', 'N/log'],
                     sublist.setSublistValue({
                         id: 'custpage_amount',
                         line: i,
-                        value: results[i].getValue('fxamount')
+                        value: amount
                     });
                     sublist.setSublistValue({
                         id: 'custpage_amount_remaining',
                         line: i,
-                        value: results[i].getValue('fxamountremaining')
+                        value: amountRemaining
+                    });
+
+                    sublist.setSublistValue({
+                        id: 'custpage_payment_amount',
+                        line: i,
+                        value: 0
                     });
                 }
 
-                form.addSubmitButton({
-                    label: 'Submit'
+                // Add the "Next" button
+                form.addButton({
+                    id: 'custpage_next',
+                    label: 'Next',
+                    functionName: 'goToSummary'
                 });
+
+                
 
                 context.response.writePage(form);
             } else {
-                // Handle POST request for payment processing
-                var request = context.request;
-                var lineCount = request.getLineCount({ sublistId: 'custpage_payment_sublist' });
-                for (var i = 0; i < lineCount; i++) {
-                    var isSelected = request.getSublistValue({
-                        sublistId: 'custpage_payment_sublist',
-                        fieldId: 'custpage_select',
-                        line: i
-                    });
-
-                    if (isSelected === 'T') {
-                        var paymentAmount = request.getSublistValue({
-                            sublistId: 'custpage_payment_sublist',
-                            fieldId: 'custpage_payment_amount',
-                            line: i
-                        });
-
-                        // Process the selected record and payment amount as needed
-                        log.debug('Selected Record', 'Line: ' + i + ' Payment Amount: ' + paymentAmount);
-                    }
-                }
+                // Handle the POST request if needed, but this may be handled by the summary Suitelet
             }
         }
 
