@@ -156,8 +156,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/redirect'],
                     functionName: 'goToSummary'
                 });
 
-                
-
                 context.response.writePage(form);
             } else {
                 // Handle the POST request if needed, but this may be handled by the summary Suitelet

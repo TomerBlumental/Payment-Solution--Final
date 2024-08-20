@@ -2,14 +2,14 @@
  * @NApiVersion 2.x
  * @NScriptType Suitelet
  */
-define(['N/ui/serverWidget'], function(serverWidget) {
+define(['N/ui/serverWidget', 'N/format'], function(serverWidget, format) {
 
-    function formatDate(inputDate) {
-        var date = new Date(inputDate);
+    function formatDateToNetSuite(dateString) {
+        var date = new Date(dateString);
         var year = date.getFullYear();
         var month = ('0' + (date.getMonth() + 1)).slice(-2); // Months are zero-based
         var day = ('0' + date.getDate()).slice(-2);
-        return year + '-' + month + '-' + day;
+        return day + '/' + month + '/' + year; // Format to DD/MM/YYYY
     }
 
     function onRequest(context) {
@@ -63,38 +63,57 @@ define(['N/ui/serverWidget'], function(serverWidget) {
             var selectedLines = JSON.parse(context.request.parameters.selectedLines || '[]');
 
             for (var i = 0; i < selectedLines.length; i++) {
-                var formattedDate = formatDate(selectedLines[i].date);
+                // Check if the date exists before formatting
+                var formattedDate = selectedLines[i].date ? formatDateToNetSuite(selectedLines[i].date) : '';
 
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_date',
-                    line: i,
-                    value: formattedDate
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_name',
-                    line: i,
-                    value: selectedLines[i].name
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_document_number',
-                    line: i,
-                    value: selectedLines[i].documentNumber
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_currency',
-                    line: i,
-                    value: selectedLines[i].currency
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_amount',
-                    line: i,
-                    value: selectedLines[i].amount
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_payment_amount',
-                    line: i,
-                    value: selectedLines[i].paymentAmount
-                });
+                if (formattedDate) {
+                    summarySublist.setSublistValue({
+                        id: 'custpage_summary_date',
+                        line: i,
+                        value: formattedDate
+                    });
+                }
+
+                // Set other fields with checks to ensure they have values
+                if (selectedLines[i].name) {
+                    summarySublist.setSublistValue({
+                        id: 'custpage_summary_name',
+                        line: i,
+                        value: selectedLines[i].name
+                    });
+                }
+
+                if (selectedLines[i].documentNumber) {
+                    summarySublist.setSublistValue({
+                        id: 'custpage_summary_document_number',
+                        line: i,
+                        value: selectedLines[i].documentNumber
+                    });
+                }
+
+                if (selectedLines[i].currency) {
+                    summarySublist.setSublistValue({
+                        id: 'custpage_summary_currency',
+                        line: i,
+                        value: selectedLines[i].currency
+                    });
+                }
+
+                if (selectedLines[i].amount) {
+                    summarySublist.setSublistValue({
+                        id: 'custpage_summary_amount',
+                        line: i,
+                        value: selectedLines[i].amount
+                    });
+                }
+
+                if (selectedLines[i].paymentAmount) {
+                    summarySublist.setSublistValue({
+                        id: 'custpage_summary_payment_amount',
+                        line: i,
+                        value: selectedLines[i].paymentAmount
+                    });
+                }
             }
 
             form.addSubmitButton({

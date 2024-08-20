@@ -23,32 +23,88 @@ define(['N/ui/serverWidget', 'N/search', 'N/redirect'],
                     label: 'Currency'
                 });
 
-                // Populate Subsidiary and Currency fields with options
-                var subsidiarySearch = search.create({
-                    type: search.Type.SUBSIDIARY,
-                    columns: ['internalid', 'name']
+                // Step 1: Search for Accounts where custrecord_okoora_bank = 'T'
+                var accountSearch = search.create({
+                    type: 'account',
+                    filters: [
+                        ['custrecord_okoora_bank', 'is', 'T']
+                    ],
+                    columns: ['subsidiary'] // Assuming subsidiary is related
                 });
 
-                subsidiarySearch.run().each(function(result) {
+                var subsidiaryCurrenciesMap = {};
+
+                accountSearch.run().each(function(result) {
+                    var subsidiaryId = result.getValue('subsidiary');
+                    
+                    if (subsidiaryId && !subsidiaryCurrenciesMap[subsidiaryId]) {
+                        subsidiaryCurrenciesMap[subsidiaryId] = [];
+                    }
+                    
+                    // Get the currencies associated with this subsidiary
+                    var subsidiarySearch = search.create({
+                        type: search.Type.SUBSIDIARY,
+                        filters: [
+                            ['internalid', 'is', subsidiaryId]
+                        ],
+                        columns: ['currency']
+                    });
+
+                    subsidiarySearch.run().each(function(subResult) {
+                        var currencyId = subResult.getValue('currency');
+                        if (currencyId && subsidiaryCurrenciesMap[subsidiaryId].indexOf(currencyId) === -1) {
+                            subsidiaryCurrenciesMap[subsidiaryId].push(currencyId);
+                        }
+                        return true;
+                    });
+
+                    return true;
+                });
+
+                // Step 2: Populate Subsidiary Field and relate it to the correct currencies
+                for (var subsidiaryId in subsidiaryCurrenciesMap) {
+                    var subsidiarySearch = search.lookupFields({
+                        type: search.Type.SUBSIDIARY,
+                        id: subsidiaryId,
+                        columns: ['name']
+                    });
+                    
+                    var subsidiaryName = subsidiarySearch.name;
+                    var cleanedName = subsidiaryName.split(' (')[0];  // Splits at the first ' (' and takes the first part
+                    
                     subsidiaryField.addSelectOption({
-                        value: result.getValue({name: 'internalid'}),
-                        text: result.getValue({name: 'name'})
+                        value: subsidiaryId,
+                        text: cleanedName
                     });
-                    return true;
-                });
+                }
 
-                var currencySearch = search.create({
-                    type: search.Type.CURRENCY,
-                    columns: ['internalid', 'name']
-                });
+                // Step 3: Populate Currency Field when a subsidiary is selected (for demonstration, we'll populate with all currencies initially)
+                currencyField.isMandatory = true;
 
-                currencySearch.run().each(function(result) {
-                    currencyField.addSelectOption({
-                        value: result.getValue({name: 'internalid'}),
-                        text: result.getValue({name: 'name'})
-                    });
-                    return true;
-                });
+                // Populate currencies based on the first subsidiary as an example
+                if (Object.keys(subsidiaryCurrenciesMap).length > 0) {
+                    var firstSubsidiaryId = Object.keys(subsidiaryCurrenciesMap)[0];
+                    subsidiaryField.defaultValue = firstSubsidiaryId;
+                    
+                    var currencyIds = subsidiaryCurrenciesMap[firstSubsidiaryId];
+                    if (currencyIds && currencyIds.length > 0) {
+                        var currencySearch = search.create({
+                            type: search.Type.CURRENCY,
+                            filters: [
+                                ['internalid', 'anyof', currencyIds]
+                            ],
+                            columns: ['internalid', 'name']
+                        });
+
+                        currencySearch.run().each(function(result) {
+                            currencyField.addSelectOption({
+                                value: result.getValue({name: 'internalid'}),
+                                text: result.getValue({name: 'name'})
+                            });
+                            return true;
+                        });
+                    }
+                }
 
                 form.addSubmitButton({
                     label: 'Next'

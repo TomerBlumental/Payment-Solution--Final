@@ -49,6 +49,17 @@ define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
                     });
                 }
 
+                // Reset payment amount to zero and update amount remaining if checkbox is deselected
+                if (isSelected === false && fieldId === selectFieldId) {
+                    paymentAmount = 0;
+                    context.currentRecord.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: paymentAmountFieldId,
+                        value: paymentAmount,
+                        ignoreFieldChange: true
+                    });
+                }
+
                 var remainingAmount = totalAmount - paymentAmount;
 
                 context.currentRecord.setCurrentSublistValue({
@@ -86,8 +97,8 @@ define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
         }
 
         var redirectUrl = url.resolveScript({
-            scriptId: 'customscript_summary_page', // Replace with your summary Suitelet script ID
-            deploymentId: 'customdeploy_summary_page', // Replace with your summary Suitelet deployment ID
+            scriptId: 'customscript_summary_page', 
+            deploymentId: 'customdeploy_summary_page', 
             params: { selectedLines: JSON.stringify(selectedLines) }
         });
 
