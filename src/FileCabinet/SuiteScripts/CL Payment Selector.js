@@ -2,7 +2,7 @@
  * @NApiVersion 2.1
  * @NScriptType ClientScript
  */
-define(['N/currentRecord'], function(currentRecord) {
+define(['N/currentRecord', 'N/search'], function(currentRecord, search) {
 
     function fieldChanged(context) {
         var currRec = currentRecord.get();
@@ -16,17 +16,24 @@ define(['N/currentRecord'], function(currentRecord) {
             var currencyField = currRec.getField('custpage_currency');
             currencyField.removeSelectOption({ value: null });
 
-            // Add relevant currencies for the selected subsidiary
+            // Add relevant currencies for the selected subsidiary using actual names
             if (subsidiaryId && subsidiaryCurrenciesMap[subsidiaryId]) {
                 subsidiaryCurrenciesMap[subsidiaryId].forEach(function(currencyId) {
-                    currencyField.insertSelectOption({
-                        value: currencyId,
-                        text: 'Currency ' + currencyId  // Replace with actual currency name if needed
-                    });
+                    // Lookup currency name using search.lookupFields
+                    var currencyName = search.lookupFields({
+                        type: 'currency',
+                        id: currencyId,
+                        columns: ['name']
+                    }).name;
+
+                    // Insert the currency option only if the name is retrieved
+                    if (currencyName) {
+                        currencyField.insertSelectOption({
+                            value: currencyId,
+                            text: currencyName
+                        });
+                    }
                 });
-            } else {
-                // If no subsidiary is selected, clear currency field
-                currencyField.insertSelectOption({ value: '', text: '' });
             }
         }
     }
