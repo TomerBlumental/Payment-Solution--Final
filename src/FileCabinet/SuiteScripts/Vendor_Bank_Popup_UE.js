@@ -27,7 +27,7 @@ define(['N/ui/message', 'N/search', 'N/file', 'N/record','N/url','./DS/DS_utilit
                               let bank_rec = newRecord.getValue('custentity_vbd_record');
                               form.addPageInitMessage({
                                     type: message.Type.WARNING,
-                                    message: `Vendor Bank Details Are Not Approved - <a href="/app/common/custom/custrecordentry.nl?id=${bank_rec}&rectype=2462&whence=" target=”_blank”><b>View</b></a>`,
+                                    message: `Vendor Bank Details Are Not Approved - <a href="/app/common/custom/custrecordentry.nl?id=${bank_rec}&rectype=2475&whence=" target=”_blank”><b>View</b></a>`,
                                     duration: 120000,
                               });
                         }
