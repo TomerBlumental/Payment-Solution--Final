@@ -4,14 +4,6 @@
  */
 define(['N/ui/serverWidget', 'N/format'], function(serverWidget, format) {
 
-    function formatDateToNetSuite(dateString) {
-        var date = new Date(dateString);
-        var year = date.getFullYear();
-        var month = ('0' + (date.getMonth() + 1)).slice(-2); // Months are zero-based
-        var day = ('0' + date.getDate()).slice(-2);
-        return day + '/' + month + '/' + year; // Format to DD/MM/YYYY
-    }
-
     function onRequest(context) {
         if (context.request.method === 'GET') {
             var form = serverWidget.createForm({
@@ -21,25 +13,13 @@ define(['N/ui/serverWidget', 'N/format'], function(serverWidget, format) {
             var summarySublist = form.addSublist({
                 id: 'custpage_summary_sublist',
                 type: serverWidget.SublistType.LIST,
-                label: 'Selected Payments'
+                label: 'Vendor Payment Summary'
             });
 
             summarySublist.addField({
-                id: 'custpage_summary_date',
-                type: serverWidget.FieldType.DATE,
-                label: 'Date'
-            });
-
-            summarySublist.addField({
-                id: 'custpage_summary_name',
+                id: 'custpage_summary_vendor',
                 type: serverWidget.FieldType.TEXT,
-                label: 'Name'
-            });
-
-            summarySublist.addField({
-                id: 'custpage_summary_document_number',
-                type: serverWidget.FieldType.TEXT,
-                label: 'Document Number'
+                label: 'Vendor'
             });
 
             summarySublist.addField({
@@ -49,72 +29,59 @@ define(['N/ui/serverWidget', 'N/format'], function(serverWidget, format) {
             });
 
             summarySublist.addField({
-                id: 'custpage_summary_amount',
-                type: serverWidget.FieldType.CURRENCY,
-                label: 'Amount (Foreign Currency)'
+                id: 'custpage_summary_doc_payed',
+                type: serverWidget.FieldType.TEXT,
+                label: 'Invoices Paid'
             });
 
             summarySublist.addField({
-                id: 'custpage_summary_payment_amount',
+                id: 'custpage_summary_total_amount',
                 type: serverWidget.FieldType.CURRENCY,
-                label: 'Payment Amount'
+                label: 'Total Amount'
             });
 
-            var selectedLines = JSON.parse(context.request.parameters.selectedLines || '[]');
+            var vendorData = JSON.parse(context.request.parameters.vendorData || '{}');
+            var totalSelectedAmount = 0;
+            var line = 0;
 
-            for (var i = 0; i < selectedLines.length; i++) {
-                // Check if the date exists before formatting
-                var formattedDate = selectedLines[i].date ? formatDateToNetSuite(selectedLines[i].date) : '';
+            for (var vendor in vendorData) {
+                summarySublist.setSublistValue({
+                    id: 'custpage_summary_vendor',
+                    line: line,
+                    value: vendorData[vendor].vendor
+                });
+                summarySublist.setSublistValue({
+                    id: 'custpage_summary_currency',
+                    line: line,
+                    value: vendorData[vendor].currency
+                });
+                summarySublist.setSublistValue({
+                    id: 'custpage_summary_doc_payed',
+                    line: line,
+                    value: vendorData[vendor].doc_payed
+                });
+                summarySublist.setSublistValue({
+                    id: 'custpage_summary_total_amount',
+                    line: line,
+                    value: vendorData[vendor].total_amount.toFixed(2)
+                });
 
-                if (formattedDate) {
-                    summarySublist.setSublistValue({
-                        id: 'custpage_summary_date',
-                        line: i,
-                        value: formattedDate
-                    });
-                }
-
-                // Set other fields with checks to ensure they have values
-                if (selectedLines[i].name) {
-                    summarySublist.setSublistValue({
-                        id: 'custpage_summary_name',
-                        line: i,
-                        value: selectedLines[i].name
-                    });
-                }
-
-                if (selectedLines[i].documentNumber) {
-                    summarySublist.setSublistValue({
-                        id: 'custpage_summary_document_number',
-                        line: i,
-                        value: selectedLines[i].documentNumber
-                    });
-                }
-
-                if (selectedLines[i].currency) {
-                    summarySublist.setSublistValue({
-                        id: 'custpage_summary_currency',
-                        line: i,
-                        value: selectedLines[i].currency
-                    });
-                }
-
-                if (selectedLines[i].amount) {
-                    summarySublist.setSublistValue({
-                        id: 'custpage_summary_amount',
-                        line: i,
-                        value: selectedLines[i].amount
-                    });
-                }
-
-                if (selectedLines[i].paymentAmount) {
-                    summarySublist.setSublistValue({
-                        id: 'custpage_summary_payment_amount',
-                        line: i,
-                        value: selectedLines[i].paymentAmount
-                    });
-                }
+                totalSelectedAmount += vendorData[vendor].total_amount;
+                line++;
             }
+
+            // Add a field to display the total amount of all selected invoices
+            var totalAmountField = form.addField({
+                id: 'custpage_total_selected_amount',
+                type: serverWidget.FieldType.CURRENCY,
+                label: 'Total Amount of Selected Invoices'
+            });
+
+            // Set the total amount field value and make it non-editable
+            totalAmountField.defaultValue = totalSelectedAmount.toFixed(2);
+            totalAmountField.updateDisplayType({
+                displayType: serverWidget.FieldDisplayType.INLINE // or use DISABLED if you want it to be grayed out
+            });
 
             form.addSubmitButton({
                 label: 'Submit Final Batch'
