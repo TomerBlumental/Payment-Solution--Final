@@ -19,7 +19,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/redirect'],
 
                 var sublist = form.addSublist({
                     id: 'custpage_payment_sublist',
-                    type: serverWidget.SublistType.INLINEEDITOR,
+                    type: serverWidget.SublistType.INLINEEDITOR, // Back to INLINEEDITOR to allow editing
                     label: 'Payment Selection'
                 });
 
@@ -64,17 +64,17 @@ define(['N/ui/serverWidget', 'N/search', 'N/redirect'],
                 });
 
                 sublist.addField({
-                    id: 'custpage_payment_amount',
-                    type: serverWidget.FieldType.CURRENCY,
-                    label: 'Payment Amount'
-                });
-
-                sublist.addField({
                     id: 'custpage_amount',
                     type: serverWidget.FieldType.CURRENCY,
                     label: 'Amount (Foreign Currency)'
                 }).updateDisplayType({
                     displayType: serverWidget.FieldDisplayType.DISABLED
+                });
+
+                sublist.addField({
+                    id: 'custpage_payment_amount',
+                    type: serverWidget.FieldType.CURRENCY,
+                    label: 'Payment Amount'
                 });
 
                 sublist.addField({
@@ -137,15 +137,14 @@ define(['N/ui/serverWidget', 'N/search', 'N/redirect'],
                         value: amount
                     });
                     sublist.setSublistValue({
-                        id: 'custpage_amount_remaining',
-                        line: i,
-                        value: amountRemaining
-                    });
-
-                    sublist.setSublistValue({
                         id: 'custpage_payment_amount',
                         line: i,
                         value: 0
+                    });
+                    sublist.setSublistValue({
+                        id: 'custpage_amount_remaining',
+                        line: i,
+                        value: amountRemaining
                     });
                 }
 
