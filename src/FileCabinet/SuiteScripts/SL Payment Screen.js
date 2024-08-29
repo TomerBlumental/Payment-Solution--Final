@@ -148,6 +148,17 @@ define(['N/ui/serverWidget', 'N/search', 'N/redirect'],
                     });
                 }
 
+                // Add a field to display the Total Amount Selected
+                var totalAmountField = form.addField({
+                    id: 'custpage_total_selected_amount',
+                    type: serverWidget.FieldType.CURRENCY,
+                    label: 'Total Amount Selected'
+                });
+
+                totalAmountField.updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.INLINE // Make it non-editable
+                });
+
                 // Add the "Next" button
                 form.addButton({
                     id: 'custpage_next',

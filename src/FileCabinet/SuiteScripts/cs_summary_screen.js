@@ -4,6 +4,36 @@
  */
 define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
 
+    function updateTotalSelectedAmount() {
+        var record = currentRecord.get();
+        var lineCount = record.getLineCount({ sublistId: 'custpage_payment_sublist' });
+        var totalSelectedAmount = 0;
+
+        for (var i = 0; i < lineCount; i++) {
+            var isSelected = record.getSublistValue({
+                sublistId: 'custpage_payment_sublist',
+                fieldId: 'custpage_select',
+                line: i
+            });
+
+            if (isSelected) {
+                var paymentAmount = parseFloat(record.getSublistValue({
+                    sublistId: 'custpage_payment_sublist',
+                    fieldId: 'custpage_payment_amount',
+                    line: i
+                })) || 0;
+
+                totalSelectedAmount += paymentAmount;
+            }
+        }
+
+        // Update the total selected amount field on the form
+        record.setValue({
+            fieldId: 'custpage_total_selected_amount',
+            value: totalSelectedAmount.toFixed(2)
+        });
+    }
+
     function fieldChanged(context) {
         var sublistId = context.sublistId;
         var fieldId = context.fieldId;
@@ -93,6 +123,9 @@ define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
                     value: remainingAmount.toFixed(2),
                     ignoreFieldChange: true
                 });
+
+                // Update the total selected amount
+                updateTotalSelectedAmount();
             }
         }
     }
