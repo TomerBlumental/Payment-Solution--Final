@@ -1,132 +1,125 @@
 /**
- * @NApiVersion 2.x
+ * @NApiVersion 2.1
  * @NScriptType ClientScript
  */
 define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
 
-    function updateTotalSelectedAmount() {
-        var record = currentRecord.get();
-        var lineCount = record.getLineCount({ sublistId: 'custpage_payment_sublist' });
-        var totalSelectedAmount = 0;
-
-        for (var i = 0; i < lineCount; i++) {
-            var isSelected = record.getSublistValue({
-                sublistId: 'custpage_payment_sublist',
-                fieldId: 'custpage_select',
-                line: i
-            });
-
-            if (isSelected) {
-                var paymentAmount = parseFloat(record.getSublistValue({
-                    sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_payment_amount',
-                    line: i
-                })) || 0;
-
-                totalSelectedAmount += paymentAmount;
-            }
-        }
-
-        // Update the total selected amount field on the form
-        record.setValue({
-            fieldId: 'custpage_total_selected_amount',
-            value: totalSelectedAmount.toFixed(2)
-        });
-    }
-
     function fieldChanged(context) {
+        var record = context.currentRecord;
         var sublistId = context.sublistId;
         var fieldId = context.fieldId;
 
         if (sublistId === 'custpage_payment_sublist') {
-            var paymentAmountFieldId = 'custpage_payment_amount';
-            var amountFieldId = 'custpage_amount';
-            var remainingAmountFieldId = 'custpage_amount_remaining';
-            var selectFieldId = 'custpage_select';
+            var paymentAmountFieldId = 'custpage_paymentamountfield';
+            var amountFieldId = 'custpage_amountfield';
+            var selectFieldId = 'custpage_selectfield';
+            var amountRemainingFieldId = 'custpage_amountremainingfield';
 
-            if (fieldId === paymentAmountFieldId || fieldId === selectFieldId) {
-                var paymentAmount = parseFloat(context.currentRecord.getCurrentSublistValue({
-                    sublistId: sublistId,
-                    fieldId: paymentAmountFieldId
-                })) || 0;
+            var paymentAmount = parseFloat(record.getCurrentSublistValue({
+                sublistId: sublistId,
+                fieldId: paymentAmountFieldId
+            })) || 0;
 
-                var totalAmount = parseFloat(context.currentRecord.getCurrentSublistValue({
-                    sublistId: sublistId,
-                    fieldId: amountFieldId
-                }));
+            var totalAmount = parseFloat(record.getCurrentSublistValue({
+                sublistId: sublistId,
+                fieldId: amountFieldId
+            })) || 0;
 
-                var isSelected = context.currentRecord.getCurrentSublistValue({
-                    sublistId: sublistId,
-                    fieldId: selectFieldId
-                });
+            var isSelected = record.getCurrentSublistValue({
+                sublistId: sublistId,
+                fieldId: selectFieldId
+            });
 
-                if (fieldId === paymentAmountFieldId) {
-                    // Ensure payment amount does not exceed total amount
-                    if (paymentAmount > totalAmount) {
-                        alert('Payment amount cannot exceed the total amount.');
-                        context.currentRecord.setCurrentSublistValue({
-                            sublistId: sublistId,
-                            fieldId: paymentAmountFieldId,
-                            value: totalAmount,
-                            ignoreFieldChange: true
-                        });
-                        paymentAmount = totalAmount;
-                    }
+            // Handle changes to the checkbox
+            if (fieldId === selectFieldId) {
+                if (isSelected) {
+                    // Set Payment Amount to Total Amount when selected
+                    record.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: paymentAmountFieldId,
+                        value: totalAmount,
+                        ignoreFieldChange: true
+                    });
 
-                    // Automatically select the line if payment amount is greater than 0
-                    if (paymentAmount > 0 && !isSelected) {
-                        context.currentRecord.setCurrentSublistValue({
-                            sublistId: sublistId,
-                            fieldId: selectFieldId,
-                            value: true,
-                            ignoreFieldChange: true
-                        });
-                    }
+                    // Set Amount Remaining to 0
+                    record.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: amountRemainingFieldId,
+                        value: 0,
+                        ignoreFieldChange: true
+                    });
+                } else {
+                    // Reset Payment Amount to 0 when deselected
+                    record.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: paymentAmountFieldId,
+                        value: 0,
+                        ignoreFieldChange: true
+                    });
 
-                    // Automatically deselect the line if payment amount is set to 0
-                    if (paymentAmount === 0 && isSelected) {
-                        context.currentRecord.setCurrentSublistValue({
-                            sublistId: sublistId,
-                            fieldId: selectFieldId,
-                            value: false,
-                            ignoreFieldChange: true
-                        });
-                    }
+                    // Set Amount Remaining to the Total Amount
+                    record.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: amountRemainingFieldId,
+                        value: totalAmount,
+                        ignoreFieldChange: true
+                    });
+                }
+            }
+
+            // Handle changes to the Payment Amount
+            if (fieldId === paymentAmountFieldId) {
+                if (paymentAmount > totalAmount) {
+                    alert('Payment amount cannot exceed the total amount.');
+                    paymentAmount = totalAmount;
+                    record.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: paymentAmountFieldId,
+                        value: paymentAmount,
+                        ignoreFieldChange: true
+                    });
                 }
 
-                if (fieldId === selectFieldId) {
-                    if (isSelected === true) {
-                        // Set payment amount to total amount when selected
-                        context.currentRecord.setCurrentSublistValue({
-                            sublistId: sublistId,
-                            fieldId: paymentAmountFieldId,
-                            value: totalAmount,
-                            ignoreFieldChange: true
-                        });
-                    } else {
-                        // Reset payment amount to 0 when deselected
-                        context.currentRecord.setCurrentSublistValue({
-                            sublistId: sublistId,
-                            fieldId: paymentAmountFieldId,
-                            value: 0,
-                            ignoreFieldChange: true
-                        });
-                    }
-                }
-
-                // Update remaining amount
-                var remainingAmount = totalAmount - paymentAmount;
-
-                context.currentRecord.setCurrentSublistValue({
+                // Update the Amount Remaining based on the new Payment Amount
+                var amountRemaining = totalAmount - paymentAmount;
+                record.setCurrentSublistValue({
                     sublistId: sublistId,
-                    fieldId: remainingAmountFieldId,
-                    value: remainingAmount.toFixed(2),
+                    fieldId: amountRemainingFieldId,
+                    value: amountRemaining,
                     ignoreFieldChange: true
                 });
 
-                // Update the total selected amount
-                updateTotalSelectedAmount();
+                // Automatically select the checkbox if payment amount > 0
+                if (paymentAmount > 0 && !isSelected) {
+                    record.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: selectFieldId,
+                        value: true,
+                        ignoreFieldChange: true
+                    });
+                }
+
+                // Automatically deselect the checkbox if payment amount is 0
+                if (paymentAmount === 0 && isSelected) {
+                    record.setCurrentSublistValue({
+                        sublistId: sublistId,
+                        fieldId: selectFieldId,
+                        value: false,
+                        ignoreFieldChange: true
+                    });
+                }
             }
+        }
+    }
+
+    function pageInit(context) {
+        // Ensure page setup logic remains intact
+        window.onbeforeunload = null;
+        var nextButton = document.getElementById('custpage_next');
+        if (nextButton) {
+            nextButton.onclick = onNextClick;
+        } else {
+            console.error('Next button not found.');
         }
     }
 
@@ -138,38 +131,38 @@ define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
         for (var i = 0; i < lineCount; i++) {
             var isSelected = record.getSublistValue({
                 sublistId: 'custpage_payment_sublist',
-                fieldId: 'custpage_select',
+                fieldId: 'custpage_selectfield',
                 line: i
             });
 
-            if (isSelected === true) {
+            if (isSelected) {
                 var vendorId = record.getSublistValue({
                     sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_name',
+                    fieldId: 'custpage_namefield',
                     line: i
                 });
 
                 var docId = record.getSublistValue({
                     sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_document_number',
+                    fieldId: 'custpage_documentnumberfield',
                     line: i
                 });
 
                 var amountPayed = parseFloat(record.getSublistValue({
                     sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_payment_amount',
+                    fieldId: 'custpage_paymentamountfield',
                     line: i
-                }));
+                })) || 0;
 
                 var docName = record.getSublistValue({
                     sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_document_number',
+                    fieldId: 'custpage_documentnumberfield',
                     line: i
                 });
 
                 var currency = record.getSublistValue({
                     sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_currency',
+                    fieldId: 'custpage_currencyfield',
                     line: i
                 });
 
@@ -194,7 +187,6 @@ define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
             }
         }
 
-        // Convert doc_payed array to a comma-separated string
         for (var vendor in vendorData) {
             if (vendorData[vendor].doc_payed.length) {
                 vendorData[vendor].doc_payed = vendorData[vendor].doc_payed.join(', ');
@@ -207,17 +199,8 @@ define(['N/url', 'N/currentRecord'], function(url, currentRecord) {
             params: { vendorData: JSON.stringify(vendorData) }
         });
 
-        // Override the onbeforeunload event to prevent the pop-up
         window.onbeforeunload = null;
-
         window.location.href = redirectUrl;
-    }
-
-    function pageInit() {
-        // Override the onbeforeunload event to prevent the pop-up
-        window.onbeforeunload = null;
-
-        document.getElementById('custpage_next').onclick = onNextClick;
     }
 
     return {
