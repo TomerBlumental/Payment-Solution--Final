@@ -1,11 +1,12 @@
 /**
- * @NApiVersion 2.x
+ * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/ui/serverWidget', 'N/format'], function(serverWidget, format) {
+define(['N/ui/serverWidget', 'N/format', 'N/task', 'N/log'], function(serverWidget, format, task, log) {
 
     function onRequest(context) {
         if (context.request.method === 'GET') {
+            // Display the summary form (your existing GET logic)
             var form = serverWidget.createForm({
                 title: 'Summary of Selected Payments'
             });
@@ -70,17 +71,15 @@ define(['N/ui/serverWidget', 'N/format'], function(serverWidget, format) {
                 line++;
             }
 
-            // Add a field to display the total amount of all selected invoices
             var totalAmountField = form.addField({
                 id: 'custpage_total_selected_amount',
                 type: serverWidget.FieldType.CURRENCY,
                 label: 'Total Amount of Selected Invoices'
             });
 
-            // Set the total amount field value and make it non-editable
             totalAmountField.defaultValue = totalSelectedAmount.toFixed(2);
             totalAmountField.updateDisplayType({
-                displayType: serverWidget.FieldDisplayType.INLINE // or use DISABLED if you want it to be grayed out
+                displayType: serverWidget.FieldDisplayType.INLINE
             });
 
             form.addSubmitButton({
@@ -88,6 +87,32 @@ define(['N/ui/serverWidget', 'N/format'], function(serverWidget, format) {
             });
 
             context.response.writePage(form);
+
+        } else if (context.request.method === 'POST') {
+            // Handle form submission when the "Submit Final Batch" button is clicked
+            try {
+                // Retrieve the vendorData JSON from the request parameters
+                var vendorData = context.request.parameters.vendorData;
+
+                // Schedule the Map/Reduce script and pass the JSON as a parameter
+                var mrTask = task.create({
+                    taskType: task.TaskType.MAP_REDUCE,
+                    scriptId: 'customscript_cash_app_v2', // Your script ID
+                    deploymentId: 'customdeploy_cash_app_2', // Your deployment ID
+                    params: {
+                        custscript_vendor_data_json: vendorData // Pass the JSON data to the script
+                    }
+                });
+
+                // Submit the Map/Reduce task
+                var taskId = mrTask.submit();
+                log.debug('Map/Reduce Task Submitted', `Task ID: ${taskId}`);
+                context.response.write('Batch submitted successfully!');
+
+            } catch (error) {
+                log.error('Error Submitting Batch', error);
+                context.response.write('There was an error submitting the batch. Please try again.');
+            }
         }
     }
 
