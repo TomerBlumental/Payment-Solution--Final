@@ -2,64 +2,8 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/ui/serverWidget', 'N/search', 'N/url', 'N/redirect'], 
-    function(serverWidget, search, url, redirect) {
-
-        function quoteAttr(s) {
-            return ("" + s).replace(/&/g, "&amp;").replace(/'/g, "&apos;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        function toBooleanString(boolean) {
-            return boolean ? "true" : "false";
-        }
-
-        function createReactApp(form, isConnected, hasConnectionError, processIsRunning) {
-            var host = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : "";
-
-            var styleTag = '<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />';
-            var styleField = form.addField({
-                id: "custpage_appstylefield",
-                type: serverWidget.FieldType.INLINEHTML,
-                label: "App Style"
-            });
-            styleField.defaultValue = styleTag;
-
-            var appTag = "<div id=\"netsuite_ssp\" data-host=\"".concat(host, "\" data-is-connected=\"").concat(toBooleanString(isConnected), "\" data-is-connection-error=\"").concat(toBooleanString(hasConnectionError), "\" data-is-process-running=\"").concat(toBooleanString(processIsRunning), "\"></div>");
-            var appField = form.addField({
-                id: "custpage_appcontainerfield",
-                type: serverWidget.FieldType.INLINEHTML,
-                label: "App Container"
-            });
-            appField.defaultValue = appTag;
-            appField.updateLayoutType({
-                layoutType: serverWidget.FieldLayoutType.OUTSIDEBELOW
-            });
-        }
-
-        function initApp(context, form, _ref) {
-            var accessTitle = _ref.accessTitle,
-                loadAdditionalData = _ref.loadAdditionalData || function () { return true; },
-                hasAccess = _ref.hasAccess || function () { return false; },
-                isProcessRunning = _ref.isProcessRunning || function () { return false; },
-                addAdditionalFormFields = _ref.addAdditionalFormFields || function () { return false; };
-
-            createReactApp(form, true, false, isProcessRunning());
-
-            if (!loadAdditionalData(form, function (e) {
-                return showConnectionError(context, form, e);
-            })) {
-                return;
-            }
-
-            if (!hasAccess()) {
-                form = displayNotAvailableErrorScreen(form, accessTitle);
-                context.response.writePage(form);
-                return;
-            }
-
-            // Ensure "Next" button is added correctly
-            addAdditionalFormFields(form);
-        }
+define(['N/ui/serverWidget', 'N/search', 'N/log', 'N/url', 'N/redirect'], 
+    function(serverWidget, search, log, url, redirect) {
 
         function onRequest(context) {
             if (context.request.method === 'GET') {
@@ -70,37 +14,18 @@ define(['N/ui/serverWidget', 'N/search', 'N/url', 'N/redirect'],
                     title: 'Payment Screen'
                 });
 
-                form.clientScriptModulePath = './cs_summary_screen.js';
+                form.clientScriptModulePath = './cs_summary_screen.js'; 
 
-                initApp(context, form, {
-                    accessTitle: 'Bill Payments',
-                    loadAdditionalData: function(form, showConnectionError) {
-                        try {
-                            return true;
-                        } catch (e) {
-                            showConnectionError(e);
-                            return false;
-                        }
-                    },
-                    hasAccess: function() {
-                        return true;
-                    },
-                    isProcessRunning: function() {
-                        return false;
-                    },
-                    addAdditionalFormFields: function(form) {
-                        // Add the "Next" button explicitly here
-                        form.addButton({
-                            id: 'custpage_next',
-                            label: 'Next',
-                            functionName: 'onNextClick'
-                        });
-                    }
+                // Add the "Next" button to the form
+                form.addButton({
+                    id: 'custpage_next',
+                    label: 'Next',
+                    functionName: 'onNextClick'
                 });
 
                 var sublist = form.addSublist({
                     id: 'custpage_payment_sublist',
-                    type: serverWidget.SublistType.EDITOR,
+                    type: serverWidget.SublistType.LIST, // Prevent new line addition
                     label: 'Payment Selection'
                 });
 
@@ -114,60 +39,66 @@ define(['N/ui/serverWidget', 'N/search', 'N/url', 'N/redirect'],
                     id: 'custpage_datefield',
                     type: serverWidget.FieldType.DATE,
                     label: 'Date'
-                }).updateDisplayType({
-                    displayType: serverWidget.FieldDisplayType.DISABLED
                 });
 
                 sublist.addField({
                     id: 'custpage_namefield',
                     type: serverWidget.FieldType.TEXT,
                     label: 'Name'
-                }).updateDisplayType({
-                    displayType: serverWidget.FieldDisplayType.DISABLED
+                });
+
+                sublist.addField({
+                    id: 'custpage_vendoridfield',
+                    type: serverWidget.FieldType.TEXT,
+                    label: 'Vendor ID'
                 });
 
                 sublist.addField({
                     id: 'custpage_documentnumberfield',
                     type: serverWidget.FieldType.TEXT,
                     label: 'Document Number'
-                }).updateDisplayType({
-                    displayType: serverWidget.FieldDisplayType.DISABLED
                 });
 
                 sublist.addField({
                     id: 'custpage_currencyfield',
                     type: serverWidget.FieldType.TEXT,
                     label: 'Currency'
-                }).updateDisplayType({
-                    displayType: serverWidget.FieldDisplayType.DISABLED
+                });
+
+                sublist.addField({
+                    id: 'custpage_currencyidfield',
+                    type: serverWidget.FieldType.TEXT,
+                    label: 'Currency ID'
                 });
 
                 sublist.addField({
                     id: 'custpage_amountfield',
                     type: serverWidget.FieldType.CURRENCY,
-                    label: 'Amount (Foreign Currency)'
-                }).updateDisplayType({
-                    displayType: serverWidget.FieldDisplayType.DISABLED
+                    label: 'Total Amount (Foreign Currency)'
                 });
 
                 sublist.addField({
                     id: 'custpage_paymentamountfield',
                     type: serverWidget.FieldType.CURRENCY,
                     label: 'Payment Amount'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.ENTRY // Ensure it's editable
                 });
 
                 sublist.addField({
                     id: 'custpage_amountremainingfield',
                     type: serverWidget.FieldType.CURRENCY,
-                    label: 'Amount Remaining (Foreign Currency)'
+                    label: 'Amount Remaining'
                 }).updateDisplayType({
-                    displayType: serverWidget.FieldDisplayType.DISABLED
+                    displayType: serverWidget.FieldDisplayType.ENTRY // Ensure it's editable
                 });
 
+                // Load search and populate results
                 var transactionSearchObj = search.load({
                     id: 'customsearch_payment_screen_result'
                 });
 
+                // Add filters for subsidiary and currency
                 transactionSearchObj.filters.push(search.createFilter({
                     name: 'subsidiary',
                     operator: search.Operator.IS,
@@ -186,7 +117,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/url', 'N/redirect'],
                 });
 
                 for (var i = 0; i < results.length; i++) {
-                    var amount = parseFloat(results[i].getValue('fxamount'));
+                    var amount = parseFloat(results[i].getValue('fxamount')) || 0;
                     var amountRemaining = amount;
 
                     sublist.setSublistValue({
@@ -194,31 +125,49 @@ define(['N/ui/serverWidget', 'N/search', 'N/url', 'N/redirect'],
                         line: i,
                         value: results[i].getValue('trandate')
                     });
+
                     sublist.setSublistValue({
                         id: 'custpage_namefield',
                         line: i,
                         value: results[i].getText('entity')
                     });
+
+                    sublist.setSublistValue({
+                        id: 'custpage_vendoridfield',
+                        line: i,
+                        value: results[i].getValue('entity') // Vendor ID
+                    });
+
                     sublist.setSublistValue({
                         id: 'custpage_documentnumberfield',
                         line: i,
                         value: results[i].getValue('tranid')
                     });
+
                     sublist.setSublistValue({
                         id: 'custpage_currencyfield',
                         line: i,
                         value: results[i].getText('currency')
                     });
+
+                    sublist.setSublistValue({
+                        id: 'custpage_currencyidfield',
+                        line: i,
+                        value: results[i].getValue('currency') // Currency ID
+                    });
+
                     sublist.setSublistValue({
                         id: 'custpage_amountfield',
                         line: i,
                         value: amount
                     });
+
                     sublist.setSublistValue({
                         id: 'custpage_paymentamountfield',
                         line: i,
-                        value: 0
+                        value: 0 // Initialize to 0 for user input later
                     });
+
                     sublist.setSublistValue({
                         id: 'custpage_amountremainingfield',
                         line: i,
@@ -226,9 +175,10 @@ define(['N/ui/serverWidget', 'N/search', 'N/url', 'N/redirect'],
                     });
                 }
 
+                // Write the form to the response
                 context.response.writePage(form);
             } else {
-                // Handle the POST request logic if needed
+                // Handle POST request logic if needed
             }
         }
 

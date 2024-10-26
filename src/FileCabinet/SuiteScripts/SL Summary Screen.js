@@ -82,6 +82,18 @@ define(['N/ui/serverWidget', 'N/format', 'N/task', 'N/log'], function(serverWidg
                 displayType: serverWidget.FieldDisplayType.INLINE
             });
 
+            // Add a hidden field to store the vendorData JSON string
+            var vendorDataField = form.addField({
+                id: 'custpage_vendor_data',
+                type: serverWidget.FieldType.TEXTAREA,
+                label: 'Vendor Data'
+            });
+
+            vendorDataField.defaultValue = JSON.stringify(vendorData);
+            vendorDataField.updateDisplayType({
+                displayType: serverWidget.FieldDisplayType.HIDDEN
+            });
+
             form.addSubmitButton({
                 label: 'Submit Final Batch'
             });
@@ -91,14 +103,14 @@ define(['N/ui/serverWidget', 'N/format', 'N/task', 'N/log'], function(serverWidg
         } else if (context.request.method === 'POST') {
             // Handle form submission when the "Submit Final Batch" button is clicked
             try {
-                // Retrieve the vendorData JSON from the request parameters
-                var vendorData = context.request.parameters.vendorData;
+                // Retrieve the vendorData JSON from the hidden field
+                var vendorData = context.request.parameters.custpage_vendor_data;
+                log.debug('Vendor Data', vendorData);
 
                 // Schedule the Map/Reduce script and pass the JSON as a parameter
                 var mrTask = task.create({
                     taskType: task.TaskType.MAP_REDUCE,
                     scriptId: 'customscript_cash_app_v2', // Your script ID
-                    deploymentId: 'customdeploy_cash_app_2', // Your deployment ID
                     params: {
                         custscript_vendor_data_json: vendorData // Pass the JSON data to the script
                     }
