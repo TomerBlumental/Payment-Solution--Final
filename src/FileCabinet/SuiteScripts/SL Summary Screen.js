@@ -2,133 +2,210 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(['N/ui/serverWidget', 'N/format', 'N/task', 'N/log'], function(serverWidget, format, task, log) {
+define(['N/ui/serverWidget', 'N/log', 'N/record', 'N/task', 'N/search', 'N/url'], 
+    function(serverWidget, log, record, task, search, url) {
 
-    function onRequest(context) {
-        if (context.request.method === 'GET') {
-            // Display the summary form (your existing GET logic)
+        function onRequest(context) {
             var form = serverWidget.createForm({
-                title: 'Summary of Selected Payments'
+                title: 'Payment Summary Screen'
             });
 
-            var summarySublist = form.addSublist({
-                id: 'custpage_summary_sublist',
+            // Get vendor data from the URL parameters (passed from previous screen)
+            var vendorData = JSON.parse(context.request.parameters.vendorData);
+
+            // Add a sublist for the invoice summary
+            var sublist = form.addSublist({
+                id: 'custpage_invoice_summary_sublist',
                 type: serverWidget.SublistType.LIST,
-                label: 'Vendor Payment Summary'
+                label: 'Invoice Summary'
             });
 
-            summarySublist.addField({
-                id: 'custpage_summary_vendor',
+            sublist.addField({
+                id: 'custpage_vendor_name',
                 type: serverWidget.FieldType.TEXT,
-                label: 'Vendor'
+                label: 'Vendor Name'
             });
 
-            summarySublist.addField({
-                id: 'custpage_summary_currency',
+            sublist.addField({
+                id: 'custpage_vendor_currency',
                 type: serverWidget.FieldType.TEXT,
                 label: 'Currency'
             });
 
-            summarySublist.addField({
-                id: 'custpage_summary_doc_payed',
+            sublist.addField({
+                id: 'custpage_invoice',
                 type: serverWidget.FieldType.TEXT,
-                label: 'Invoices Paid'
+                label: 'Invoice'
             });
 
-            summarySublist.addField({
-                id: 'custpage_summary_total_amount',
+            sublist.addField({
+                id: 'custpage_total_amount_paid',
                 type: serverWidget.FieldType.CURRENCY,
-                label: 'Total Amount'
+                label: 'Total Amount Paid'
             });
 
-            var vendorData = JSON.parse(context.request.parameters.vendorData || '{}');
-            var totalSelectedAmount = 0;
-            var line = 0;
-
-            for (var vendor in vendorData) {
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_vendor',
-                    line: line,
-                    value: vendorData[vendor].vendor
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_currency',
-                    line: line,
-                    value: vendorData[vendor].currency
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_doc_payed',
-                    line: line,
-                    value: vendorData[vendor].doc_payed
-                });
-                summarySublist.setSublistValue({
-                    id: 'custpage_summary_total_amount',
-                    line: line,
-                    value: vendorData[vendor].total_amount.toFixed(2)
-                });
-
-                totalSelectedAmount += vendorData[vendor].total_amount;
-                line++;
-            }
-
-            var totalAmountField = form.addField({
-                id: 'custpage_total_selected_amount',
-                type: serverWidget.FieldType.CURRENCY,
-                label: 'Total Amount of Selected Invoices'
+            sublist.addField({
+                id: 'custpage_payment_status',
+                type: serverWidget.FieldType.TEXT,
+                label: 'Payment Status'
             });
 
-            totalAmountField.defaultValue = totalSelectedAmount.toFixed(2);
-            totalAmountField.updateDisplayType({
-                displayType: serverWidget.FieldDisplayType.INLINE
-            });
+            var totalAmount = 0; // To calculate the total amount of all invoices
+            var isSubmitted = false; // To track if the payment has been submitted
 
-            // Add a hidden field to store the vendorData JSON string
-            var vendorDataField = form.addField({
-                id: 'custpage_vendor_data',
-                type: serverWidget.FieldType.TEXTAREA,
-                label: 'Vendor Data'
-            });
+            // Check if the request is a POST, indicating the Submit button was clicked
+            if (context.request.method === 'POST') {
+                var vendorDataToUpdate = [];
 
-            vendorDataField.defaultValue = JSON.stringify(vendorData);
-            vendorDataField.updateDisplayType({
-                displayType: serverWidget.FieldDisplayType.HIDDEN
-            });
+                // Iterate over each line to update the Payment Hold status and collect data for Map/Reduce
+                for (var i = 0; i < vendorData.length; i++) {
+                    var vendor = vendorData[i];
+                    var isUpdated = false;
 
-            form.addSubmitButton({
-                label: 'Submit Final Batch'
-            });
+                    vendor.doc_payed.split(', ').forEach(function(invoice) {
+                        // Update the Payment Hold on the vendor bill (set to true)
+                        var vendorRecord = record.load({
+                            type: record.Type.VENDOR_BILL,
+                            id: vendor.vendor_id
+                        });
 
-            context.response.writePage(form);
+                        // Set the Payment Hold to true
+                        vendorRecord.setValue({
+                            fieldId: 'custbody_payment_hold',
+                            value: true
+                        });
 
-        } else if (context.request.method === 'POST') {
-            // Handle form submission when the "Submit Final Batch" button is clicked
-            try {
-                // Retrieve the vendorData JSON from the hidden field
-                var vendorData = context.request.parameters.custpage_vendor_data;
-                log.debug('Vendor Data', vendorData);
+                        // Save the updated vendor bill
+                        vendorRecord.save();
 
-                // Schedule the Map/Reduce script and pass the JSON as a parameter
+                        vendorDataToUpdate.push({
+                            vendor_id: vendor.vendor_id,
+                            vendor_name: vendor.vendor,
+                            payment_status: 'Payment Hold Updated'
+                        });
+
+                        // Update the status in the sublist
+                        sublist.setSublistValue({
+                            id: 'custpage_payment_status',
+                            line: i,
+                            value: 'Payment Hold Updated' // Status after update
+                        });
+
+                        isUpdated = true;
+                    });
+
+                    if (isUpdated) {
+                        isSubmitted = true; // Mark as submitted
+                    }
+                }
+
+                // Trigger the Map/Reduce script for further processing (if necessary)
                 var mrTask = task.create({
                     taskType: task.TaskType.MAP_REDUCE,
-                    scriptId: 'customscript_cash_app_v2', // Your script ID
+                    scriptId: 'customscript_mr_create_payment_batch',
+                    deploymentId: 'customdeploy_mr_create_payment_batch_2',
                     params: {
-                        custscript_vendor_data_json: vendorData // Pass the JSON data to the script
+                        vendorData: JSON.stringify(vendorDataToUpdate)
                     }
                 });
 
-                // Submit the Map/Reduce task
                 var taskId = mrTask.submit();
-                log.debug('Map/Reduce Task Submitted', `Task ID: ${taskId}`);
-                context.response.write('Batch submitted successfully!');
-
-            } catch (error) {
-                log.error('Error Submitting Batch', error);
-                context.response.write('There was an error submitting the batch. Please try again.');
             }
-        }
-    }
 
-    return {
-        onRequest: onRequest
-    };
-});
+            // Add the data from the vendorData JSON to the sublist
+            var line = 0;
+            vendorData.forEach(function(vendor) {
+                vendor.doc_payed.split(', ').forEach(function(invoice) {
+                    sublist.setSublistValue({
+                        id: 'custpage_vendor_name',
+                        line: line,
+                        value: vendor.vendor
+                    });
+
+                    sublist.setSublistValue({
+                        id: 'custpage_vendor_currency',
+                        line: line,
+                        value: vendor.currency
+                    });
+
+                    sublist.setSublistValue({
+                        id: 'custpage_invoice',
+                        line: line,
+                        value: invoice
+                    });
+
+                    sublist.setSublistValue({
+                        id: 'custpage_total_amount_paid',
+                        line: line,
+                        value: vendor.total_amount
+                    });
+
+                    sublist.setSublistValue({
+                        id: 'custpage_payment_status',
+                        line: line,
+                        value: isSubmitted ? 'Payment Hold Updated' : 'Pending Update'
+                    });
+
+                    totalAmount += vendor.total_amount;
+                    line++;
+                });
+            });
+
+            // Add a headline for "Total Payment Amount"
+            form.addField({
+                id: 'custpage_total_payment_amount_heading',
+                type: serverWidget.FieldType.INLINEHTML,
+                label: 'Total Payment Amount Heading'
+            }).defaultValue = `
+                <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+                    Total Payment Amount
+                </div>
+            `;
+
+            // Add a custom field for the total amount with inline HTML for styling
+            form.addField({
+                id: 'custpage_total_amount_html',
+                type: serverWidget.FieldType.INLINEHTML,
+                label: 'Total Amount of All Invoices'
+            }).defaultValue = `
+                <div style="background-color: #f2f2f2; padding: 10px; font-size: 16px; color: black; border-radius: 4px;">
+                    <strong>${totalAmount.toFixed(2)}</strong>
+                </div>
+            `;
+
+            // Add a Submit Payment button
+            form.addButton({
+                id: 'custpage_submit_payment',
+                label: isSubmitted ? 'Payment Submitted' : 'Submit Payment',
+                functionName: 'onSubmitPaymentClick'
+            });
+
+            // Disable the Submit Payment button after it's pressed
+            if (isSubmitted) {
+                form.getField({
+                    id: 'custpage_submit_payment'
+                }).updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED
+                });
+            }
+
+            // Client script for handling the submit payment button
+            form.clientScriptModulePath = '/SuiteScripts/cs_payment_submission.js';
+
+            // Display a confirmation message if the payment was successfully processed
+            if (isSubmitted) {
+                form.addField({
+                    id: 'custpage_confirmation_message',
+                    type: serverWidget.FieldType.INLINEHTML,
+                    label: 'Confirmation'
+                }).defaultValue = '<div style="color: green;">Payment Hold has been successfully updated for the selected invoices.</div>';
+            }
+
+            // Write the form to the response
+            context.response.writePage(form);
+        }
+
+        return {
+            onRequest: onRequest
+        };
+    });

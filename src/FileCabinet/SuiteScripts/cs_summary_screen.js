@@ -197,96 +197,104 @@ define(['N/url', 'N/currentRecord', 'N/log'], function(url, currentRecord, log) 
         }
     }
 
-    function onNextClick() {
-        var record = currentRecord.get();
-        var lineCount = record.getLineCount({ sublistId: 'custpage_payment_sublist' });
-        var vendorData = [];
+function onNextClick() {
+    var record = currentRecord.get();
+    var lineCount = record.getLineCount({ sublistId: 'custpage_payment_sublist' });
+    var vendorData = [];
+    var isAnySelected = false;
 
-        for (var i = 0; i < lineCount; i++) {
-            var isSelected = record.getSublistValue({
+    // Check if at least one line is selected or has a payment amount entered
+    for (var i = 0; i < lineCount; i++) {
+        var isSelected = record.getSublistValue({
+            sublistId: 'custpage_payment_sublist',
+            fieldId: 'custpage_selectfield',
+            line: i,
+        });
+
+        // Use cache, but fall back to sublist value for Payment Amount
+        var paymentAmount = paymentAmountCache[i] || parseFloat(
+            record.getSublistValue({
                 sublistId: 'custpage_payment_sublist',
-                fieldId: 'custpage_selectfield',
-                line: i
+                fieldId: 'custpage_paymentamountfield',
+                line: i,
+            })
+        ) || 0;
+
+        if (isSelected || paymentAmount > 0) {
+            isAnySelected = true; // If at least one line is selected or has a payment amount, set to true
+
+            var vendorName = record.getSublistValue({
+                sublistId: 'custpage_payment_sublist',
+                fieldId: 'custpage_namefield',
+                line: i,
             });
 
-            var paymentAmount = paymentAmountCache[i] || 0;
-            var amountRemaining = amountRemainingCache[i] || totalAmountCache[i];
+            var vendorId = record.getSublistValue({
+                sublistId: 'custpage_payment_sublist',
+                fieldId: 'custpage_vendoridfield',
+                line: i,
+            });
 
-            if (isSelected || paymentAmount > 0 || amountRemaining < totalAmountCache[i]) {
-                var vendorName = record.getSublistValue({
-                    sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_namefield',
-                    line: i
-                });
+            var docId = record.getSublistValue({
+                sublistId: 'custpage_payment_sublist',
+                fieldId: 'custpage_documentnumberfield',
+                line: i,
+            });
 
-                var vendorId = record.getSublistValue({
-                    sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_vendoridfield', // Now matches the Vendor ID field in the Suitelet
-                    line: i
-                });
+            var currency = record.getSublistValue({
+                sublistId: 'custpage_payment_sublist',
+                fieldId: 'custpage_currencyfield',
+                line: i,
+            });
 
-                var docId = record.getSublistValue({
-                    sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_documentnumberfield',
-                    line: i
-                });
+            var currencyId = record.getSublistValue({
+                sublistId: 'custpage_payment_sublist',
+                fieldId: 'custpage_currencyidfield',
+                line: i,
+            });
 
-                var currency = record.getSublistValue({
-                    sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_currencyfield',
-                    line: i
-                });
-
-                var currencyId = record.getSublistValue({
-                    sublistId: 'custpage_payment_sublist',
-                    fieldId: 'custpage_currencyidfield', // Now matches the Currency ID field in the Suitelet
-                    line: i
-                });
-
-                var vendor = vendorData.find(v => v.vendor === vendorName);
-                if (!vendor) {
-                    vendor = {
-                        vendor: vendorName,
-                        vendor_id: vendorId,
-                        currency: currency,
-                        currency_id: currencyId,
-                        transaction: [],
-                        total_amount: 0,
-                        doc_payed: []
-                    };
-                    vendorData.push(vendor);
-                }
-
-                vendor.transaction.push({
-                    doc_id: docId,
-                    amount_payed: paymentAmount,
-                    doc_name: docId
-                });
-
-                vendor.total_amount += paymentAmount;
-                vendor.doc_payed.push(docId);
+            var vendor = vendorData.find((v) => v.vendor === vendorName);
+            if (!vendor) {
+                vendor = {
+                    vendor: vendorName,
+                    vendor_id: vendorId,  
+                    currency: currency,
+                    currency_id: currencyId,  
+                    doc_payed: [],
+                    total_amount: 0,
+                };
+                vendorData.push(vendor);
             }
+
+            vendor.doc_payed.push(docId);
+            vendor.total_amount += paymentAmount;
         }
-
-        vendorData.forEach(vendor => {
-            vendor.doc_payed = vendor.doc_payed.join(', ');
-        });
-
-        // Log JSON data to Script Execution Log
-        log.debug({
-            title: 'Vendor Data JSON with IDs',
-            details: JSON.stringify(vendorData)
-        });
-
-        var redirectUrl = url.resolveScript({
-            scriptId: 'customscript_summary_page',
-            deploymentId: 'customdeploy_summary_page',
-            params: { vendorData: JSON.stringify(vendorData) }
-        });
-
-        window.onbeforeunload = null;
-        window.location.href = redirectUrl;
     }
+
+    // If no line is selected or no payment amount is entered, prevent proceeding
+    if (!isAnySelected) {
+        alert('Please select at least one line before proceeding.');
+        return; // Prevent proceeding to the next page
+    }
+
+    vendorData.forEach((vendor) => {
+        vendor.doc_payed = vendor.doc_payed.join(', ');
+    });
+
+    // Debug: Log the JSON data to the console
+    console.log("Vendor Data:", JSON.stringify(vendorData, null, 2));
+  
+    var redirectUrl = url.resolveScript({
+        scriptId: 'customscript_summary_page',
+        deploymentId: 'customdeploy_summary_page',
+        params: { vendorData: JSON.stringify(vendorData) },
+    }); 
+
+    window.onbeforeunload = null;
+    window.location.href = redirectUrl;
+}
+
+
 
     return {
         fieldChanged: fieldChanged,

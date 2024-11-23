@@ -1,32 +1,43 @@
 /**
- * @NApiVersion 2.1
+ * @NApiVersion 2.x
  * @NScriptType ClientScript
  */
-define(['N/currentRecord', 'N/search'], function(currentRecord, search) {
+define(['N/search'], function(search) {
 
     function fieldChanged(context) {
-        var currRec = currentRecord.get();
+        var currRec = context.currentRecord;
 
         if (context.fieldId === 'custpage_subsidiary') {
-            var subsidiaryId = currRec.getValue('custpage_subsidiary');
-            var mappingJson = currRec.getValue('custpage_subsidiary_currency_map');
+            var subsidiaryId = currRec.getValue({ fieldId: 'custpage_subsidiary' });
+            var mappingJson = currRec.getValue({ fieldId: 'custpage_subsidiary_currency_map' });
             var subsidiaryCurrenciesMap = JSON.parse(mappingJson);
 
-            // Clear existing options in the currency field
-            var currencyField = currRec.getField('custpage_currency');
-            currencyField.removeSelectOption({ value: null });
+            // Get the Currency field
+            var currencyField = currRec.getField({ fieldId: 'custpage_currency' });
 
-            // Add relevant currencies for the selected subsidiary using actual names
-            if (subsidiaryId && subsidiaryCurrenciesMap[subsidiaryId]) {
+            // Clear existing options in the Currency field
+            while (currencyField.getSelectOptions().length > 0) {
+                var options = currencyField.getSelectOptions();
+                options.forEach(function(option) {
+                    currencyField.removeSelectOption({ value: option.value });
+                });
+            }
+
+            // Disable the Currency field if no Subsidiary is selected
+            if (!subsidiaryId) {
+                currencyField.isDisabled = true;
+                return;
+            }
+
+            // Populate the Currency field with options based on the selected Subsidiary
+            if (subsidiaryCurrenciesMap[subsidiaryId]) {
                 subsidiaryCurrenciesMap[subsidiaryId].forEach(function(currencyId) {
-                    // Lookup currency name using search.lookupFields
                     var currencyName = search.lookupFields({
                         type: 'currency',
                         id: currencyId,
                         columns: ['name']
                     }).name;
 
-                    // Insert the currency option only if the name is retrieved
                     if (currencyName) {
                         currencyField.insertSelectOption({
                             value: currencyId,
@@ -34,6 +45,9 @@ define(['N/currentRecord', 'N/search'], function(currentRecord, search) {
                         });
                     }
                 });
+
+                // Enable the Currency field
+                currencyField.isDisabled = false;
             }
         }
     }

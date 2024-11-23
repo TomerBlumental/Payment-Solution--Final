@@ -88,7 +88,7 @@ define(['N/ui/serverWidget', 'N/search', 'N/log', 'N/url', 'N/redirect'],
                 sublist.addField({
                     id: 'custpage_amountremainingfield',
                     type: serverWidget.FieldType.CURRENCY,
-                    label: 'Amount Remaining'
+                    label: 'Unpaid Balance'
                 }).updateDisplayType({
                     displayType: serverWidget.FieldDisplayType.ENTRY // Ensure it's editable
                 });

@@ -11,30 +11,45 @@ define(['N/ui/serverWidget', 'N/query', 'N/search', 'N/redirect'],
                     title: 'Subsidiary and Currency Selection'
                 });
 
+                // Add Subsidiary Field
                 var subsidiaryField = form.addField({
                     id: 'custpage_subsidiary',
                     type: serverWidget.FieldType.SELECT,
                     label: 'Subsidiary'
                 });
+                subsidiaryField.isMandatory = true;
 
+                // Add Currency Field
                 var currencyField = form.addField({
                     id: 'custpage_currency',
                     type: serverWidget.FieldType.SELECT,
                     label: 'Currency'
                 });
+                currencyField.isMandatory = true;
+                currencyField.updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.DISABLED // Initially disabled
+                });
 
-                // Running SuiteQL query to get subsidiary and currency IDs
+                // Add hidden field for subsidiary-currency mapping
+                var mappingField = form.addField({
+                    id: 'custpage_subsidiary_currency_map',
+                    type: serverWidget.FieldType.TEXTAREA, // Hidden field
+                    label: 'Subsidiary-Currency Mapping'
+                });
+                mappingField.updateDisplayType({
+                    displayType: serverWidget.FieldDisplayType.HIDDEN
+                });
+
+                // Build the mapping of subsidiaries to currencies
+                var subsidiaryCurrenciesMap = {};
                 let accountSearch = query.runSuiteQL({
                     query: `
                         SELECT subsidiary,
                                currency
                         FROM   account
-                        WHERE  custrecord_okoora_bank = 'T' 
+                        WHERE  custrecord_okoora_bank = 'T'
                     `,
                 }).asMappedResults();
-
-                // Building the mapping of subsidiaries to unique currencies
-                var subsidiaryCurrenciesMap = {};
 
                 accountSearch.forEach(function(result) {
                     var subsidiaryId = result.subsidiary;
@@ -44,12 +59,13 @@ define(['N/ui/serverWidget', 'N/query', 'N/search', 'N/redirect'],
                         subsidiaryCurrenciesMap[subsidiaryId] = [];
                     }
 
-                    if (subsidiaryCurrenciesMap[subsidiaryId].indexOf(currencyId) === -1) {
+                    if (!subsidiaryCurrenciesMap[subsidiaryId].includes(currencyId)) {
                         subsidiaryCurrenciesMap[subsidiaryId].push(currencyId);
                     }
                 });
 
-                // Populate the Subsidiary Field with actual names
+                // Populate Subsidiary Field
+                subsidiaryField.addSelectOption({ value: '', text: '' });
                 for (var subsidiaryId in subsidiaryCurrenciesMap) {
                     var subsidiaryName = search.lookupFields({
                         type: 'subsidiary',
@@ -65,53 +81,20 @@ define(['N/ui/serverWidget', 'N/query', 'N/search', 'N/redirect'],
                     }
                 }
 
-                // Populate the Currency Field with actual names
-                currencyField.addSelectOption({ value: '', text: '' });
-                var uniqueCurrencyIds = [];
-
-                for (var subsidiaryId in subsidiaryCurrenciesMap) {
-                    var currencyIds = subsidiaryCurrenciesMap[subsidiaryId];
-                    currencyIds.forEach(function(currencyId) {
-                        if (uniqueCurrencyIds.indexOf(currencyId) === -1) {
-                            uniqueCurrencyIds.push(currencyId);
-                        }
-                    });
-                }
-
-                uniqueCurrencyIds.forEach(function(currencyId) {
-                    var currencyName = search.lookupFields({
-                        type: 'currency',
-                        id: currencyId,
-                        columns: ['name']
-                    }).name;
-
-                    if (currencyName) {
-                        currencyField.addSelectOption({
-                            value: currencyId,
-                            text: currencyName
-                        });
-                    }
-                });
-
-                // Store the subsidiary-currency mapping as a JSON string in a hidden field
-                var mappingField = form.addField({
-                    id: 'custpage_subsidiary_currency_map',
-                    type: serverWidget.FieldType.TEXTAREA, // Exposed as TEXTAREA for debugging
-                    label: 'Subsidiary-Currency Mapping'
-                });
-                mappingField.updateDisplayType({
-                    displayType: serverWidget.FieldDisplayType.HIDDEN // Hide the field
-                });
+                // Store the subsidiary-currency mapping as a JSON string in the hidden field
                 mappingField.defaultValue = JSON.stringify(subsidiaryCurrenciesMap);
 
                 // Attach the client script
                 form.clientScriptModulePath = "SuiteScripts/CL Payment Selector.js";
+
+                // Add Submit Button
                 form.addSubmitButton({
                     label: 'Next'
                 });
 
                 context.response.writePage(form);
             } else {
+                // Handle POST request
                 var subsidiary = context.request.parameters.custpage_subsidiary;
                 var currency = context.request.parameters.custpage_currency;
 
